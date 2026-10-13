@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 manifest_path = os.path.join("data", "manifest.json")
 boc = BrainObservatoryCache(
     manifest_file=manifest_path
@@ -93,16 +94,134 @@ for direction in orientations:
 
 print("Standard deviations:", std_responses)
 
+# cal nuron stuff 
+def calculate_tuning(neuron_trace):
+    responses = []
+    directions = []
+
+    for index, stim in stim_table.iterrows():
+        start = int(stim["start"])
+        end = int(stim["end"])
+        fluorescence = neuron_trace[start:end]
+        mean = np.mean(fluorescence)
+        if pd.notna(stim["orientation"]):
+            directions.append(stim["orientation"])
+            responses.append(mean)
+    responses = np.asarray(responses)
+    directions = np.asarray(directions)
+    mean_responses = []
+    std_responses = []
+
+    for direction in orientations:
+        mask = directions == direction
+        mean_responses.append(np.mean(responses[mask]))
+        std_responses.append(np.std(responses[mask]))
+
+    return mean_responses, std_responses
+    responses = []
+    directions = []
+
+means, stds = calculate_tuning(dff[0])
+
+print("Mean responses:", means)
+print("Standard deviations:", stds)
+
+responses = np.array(responses)
+
+# plot nueorn with error 
 plt.figure(figsize=(8, 5))
 plt.errorbar(
     orientations,
-    mean_responses,
-    yerr=std_responses,
+    means,
+    yerr=stds,
     fmt="o-",
     capsize=5
 )
 plt.xlabel("Grating Direction (degrees)")
 plt.ylabel("Mean ΔF/F")
 plt.title("Neuron 0 - Direction Tuning")
-plt.savefig("figures/neuron_0_tuning.png", dpi=300, bbox_inches="tight")
 plt.show()
+
+#loop through stim_table.iloc and find each ones info 
+for nueron_idx in range(5):
+    means, side = calculate_tuning(dff[nueron_idx])
+    pref_dir = orientations[np.argmax(means)]
+    print("Nueron num",nueron_idx,"pref orientation", pref_dir )
+
+# graph all 5 neurons 
+plt.figure(figsize=(10, 6))
+
+for neuron_idx in range(5):
+    means, stds = calculate_tuning(dff[neuron_idx])
+    plt.plot(orientations,means,marker="o", label=f"Neuron {neuron_idx}")
+
+plt.xlabel("Grating direction (degrees)")
+plt.ylabel("Mean ΔF/F")
+plt.title("Visual Cortex - Neuron Tuning Comparison")
+plt.legend()
+plt.show()
+
+## cal DSI for neuron 0 
+means, stds = calculate_tuning(dff[0])
+preferred_idx = np.argmax(means)
+preferred_direction = orientations[preferred_idx]
+preferred_response = means[preferred_idx]
+opposite_direction = (preferred_direction + 180) % 360
+oppoiste_idx = np.where(orientations==opposite_direction)[0][0]
+opposite_response = means[oppoiste_idx]
+denominator = preferred_response + opposite_response
+
+if denominator > 1e-10:
+    dsi = (preferred_response - opposite_response) / denominator
+else:
+    dsi = np.nan
+print("Neuron 0 DSI:", dsi)
+
+#find DSI for 5 neurons 
+for neuron_idx in range(5):
+    means, stds = calculate_tuning(dff[neuron_idx])
+
+    preferred_idx = np.argmax(means)
+    preferred_direction = orientations[preferred_idx]
+    preferred_response = means[preferred_idx]
+    opposite_direction = (preferred_direction + 180) % 360
+    oppoiste_idx = np.where(orientations==opposite_direction)[0][0]
+    opposite_response = means[oppoiste_idx]
+
+    if denominator > 1e-10:
+        dsi = (preferred_response - opposite_response) / denominator
+    else:
+        dsi = np.nan
+    print("Nueonr num:", neuron_idx,"DSI:", dsi)
+
+    # Print neuron number and DSI
+
+
+results = []
+
+for neuron_idx in range(5):
+    means, stds = calculate_tuning(dff[neuron_idx])
+
+    preferred_idx = np.argmax(means)
+    preferred_direction = orientations[preferred_idx]
+    preferred_response = means[preferred_idx]
+
+    opposite_direction = (preferred_direction + 180) % 360
+    opposite_idx = np.where(orientations == opposite_direction)[0][0]
+    opposite_response = means[opposite_idx]
+
+    denominator = preferred_response + opposite_response
+    dsi = ((preferred_response - opposite_response) / denominator
+           if denominator > 1e-10 else np.nan)
+
+    results.append({
+        "Neuron": neuron_idx,
+        "Preferred Direction": preferred_direction,
+        "DSI": dsi
+    })
+
+df = pd.DataFrame(results)
+os.makedirs("data", exist_ok=True)
+df.to_csv("data/neuron_selectivity.csv", index=False)
+
+print(df)
