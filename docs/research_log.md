@@ -107,3 +107,21 @@ I evaluated the population vector decoder separately for each drifting-grating d
 **Visualization:** `results/figures/direction_errors.png`
 
 **Next steps:** Investigate direction selectivity and compare the population vector approach against an alternative decoding method.
+
+## Experiment 4 — Confusion Matrix and Normalization
+
+Today I looked at which directions the decoder was getting right and wrong. I made a confusion matrix and found that it was predicting 0° a lot, even when the actual direction was different.
+
+I also tried normalizing the neurons' responses to see if that would improve accuracy.
+
+**Results:**
+
+- Original decoder: 27.73%
+- Baseline-corrected decoder: 29.41%
+- Normalized decoder: 21.85%
+
+Normalization actually made the decoder worse. This might mean that neurons with stronger responses are giving us useful information, and scaling them down makes predictions less accurate.
+
+I also had to fix some Python errors and handle one prediction that returned NaN.
+
+**Next:** Try a different decoding method and see if we can get better accuracy, especially for directions between 135° and 270°.
