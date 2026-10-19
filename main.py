@@ -1,10 +1,11 @@
 from src.data_loader import load_data
-from src.tuning import calculate_tuning
 from src.tuning import calculate_tuning, calculate_dsi
 from src.visualization import plot_tuning,plot_direction_errors
 from src.decoding import get_pref_dir,population_vector_decode
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
 import numpy as np
 import pandas as pd 
 def main():
@@ -197,7 +198,7 @@ def main():
         avg_mean_err = np.nanmean(errors_for_direction)
         direction_errors.append(avg_mean_err)
         print("Average mean error:", avg_mean_err)
-    plot_direction_errors(unique_test_dirs, direction_errors)
+   # plot_direction_errors(unique_test_dirs, direction_errors)
 
     print("Actual directions:", actual_directions[:10])
     print("Predicted directions:", decoded_directions[:10])
@@ -228,15 +229,15 @@ def main():
     print("Confusion Matrix:")
     print(cm)
 
+    print("Training inputs:", normalized_train.shape)
+    print("Testing inputs:", normalized_test.shape)
+    print("Training labels:", train_stims["orientation"].shape)
+    print("Testing labels:", test_stims["orientation"].shape)
 
-    comparison = pd.DataFrame({
-    "Model": ["Baseline", "Normalized"],
-        "Accuracy": [baseline_accuracy, normalized_accuracy]
-    })
+    X_train = torch.tensor(normalized_train, dtype=torch.float32)
+    X_test = torch.tensor(normalized_test,dtype=torch.float32)
 
-    comparison.to_csv("results/metrics_day4.csv", index=False)
 
-    print("Day 4 results saved!")
 
 if __name__ ==  "__main__":
     main()
