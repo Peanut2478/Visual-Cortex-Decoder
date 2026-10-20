@@ -22,13 +22,17 @@ def prepare_data(dff, stim_table):
         test_responses.append(mean_responses)
     test_responses = np.asarray(test_responses)
 
-    training_baselines = np.mean(train_responses, axis=0)
-    centered_train = train_responses - training_baselines
-    max_responses = np.max(centered_train, axis=0)
-    safe_max = np.where(max_responses <= 0, 1, max_responses)
-    normalized_train = centered_train / safe_max
+    return train_responses,test_responses,train_stims["orientation"],test_stims['orientation']
+def normalize_data(X_train,X_val, X_test):
+    training_baseline = np.mean(X_train,axis=0)
+    centered_train = X_train - training_baseline
+    centered_val = X_val - training_baseline
+    centered_test = X_test - training_baseline
 
-    centered_test = test_responses - training_baselines
-    normalized_test = centered_test / safe_max
+    max_res = np.max(centered_train,axis=0)
+    safe_max = np.where(max_res <=0,1,max_res)
+    normalized_train = centered_train/safe_max
+    normalized_val = centered_val/safe_max
+    normalized_test = centered_test/safe_max
 
-    return normalized_train,normalized_test,train_stims["orientation"],test_stims['orientation']
+    return normalized_train,normalized_val,normalized_test

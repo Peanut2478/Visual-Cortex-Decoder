@@ -125,3 +125,56 @@ Normalization actually made the decoder worse. This might mean that neurons with
 I also had to fix some Python errors and handle one prediction that returned NaN.
 
 **Next:** Try a different decoding method and see if we can get better accuracy, especially for directions between 135° and 270°.
+
+## Experiment 5 — Building a Neural Network Decoder
+
+Today I built my first neural network using PyTorch to predict stimulus direction from neural activity.
+
+Instead of using the population vector method, I trained a multilayer perceptron (MLP) using data from all 207 recorded neurons.
+
+The model has 207 input features, 64 hidden neurons, and 8 output classes representing directions from 0° to 315°.
+
+**Method:** Used normalized ΔF/F responses as inputs and trained the model for 100 epochs using cross-entropy loss and the Adam optimizer.
+
+**Results:**
+
+- Training accuracy: 86.61%
+- Test accuracy: 60.00%
+- Population vector baseline: 29.41%
+- Random guessing: 12.50%
+
+The neural network performed much better than the population vector decoder, suggesting that it can learn relationships between neural activity and stimulus direction that the simpler method misses.
+
+I also created a confusion matrix to see which directions the model struggled with.
+
+One thing I noticed was that training accuracy was much higher than testing accuracy, which could mean the model was overfitting.
+
+**Next:** Investigate overfitting and experiment with ways to improve the model's performance on unseen data.
+
+## Experiment 6 — Improving the Neural Network
+
+Today I focused on understanding overfitting and improving the neural network.
+
+First, I divided the data into 382 training samples, 96 validation samples, and 120 testing samples. I also fixed the normalization process so that it only used information from the training data.
+
+I plotted training and validation loss over 100 epochs. Both decreased steadily, but training loss was lower than validation loss.
+
+I then experimented with two regularization techniques: dropout and weight decay.
+
+**Results:**
+
+| Model                | Training accuracy | Validation accuracy |
+| -------------------- | ----------------: | ------------------: |
+| Original MLP         |            88.74% |              63.54% |
+| Dropout (20%)        |            87.70% |              63.54% |
+| Weight decay (0.001) |            90.31% |              65.62% |
+
+Dropout didn't improve validation accuracy, but weight decay increased it slightly to 65.62%.
+
+The improvement was only about 2 percentage points, so I can't say for sure that weight decay is consistently better without running more experiments.
+
+I also added a random seed to make the experiments more reproducible and saved the trained model in `models/visual_cortex_decoder.pth`.
+
+**What I learned:** A lower training loss doesn't always mean a model will perform better on new data. Using validation data helps compare models without relying on test performance.
+
+**Next:** Test the model with different random seeds, save the normalization parameters, and create a function that takes neural activity and predicts the stimulus direction.
