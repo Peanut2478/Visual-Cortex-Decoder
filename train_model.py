@@ -4,7 +4,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 import random
+import copy 
 import matplotlib.pyplot as plt
+from pathlib import Path
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 
@@ -16,7 +18,7 @@ class NeuralDecoder(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.network = nn.Sequential(nn.Linear(207,64),nn.ReLU(),nn.Linear(64,8))
+        self.network = nn.Sequential(nn.Linear(207,64),nn.ReLU(),nn.Dropout(p=0.3),nn.Linear(64,8))
 
     def forward(self,x):
         return self.network(x)
@@ -66,9 +68,14 @@ optimizer = torch.optim.Adam(model.parameters(),lr=0.001,weight_decay=0.001)
 outputs = model(X_train)
 print("Output shape:",outputs.shape)
 
-epochs = 100
+epochs = 300
 train_losses=[]
 val_losses=[]
+best_Val_loss = float("inf")
+best_model_state = None
+patience = 30
+counter = 0 
+
 for epoch in range(epochs):
     model.train()
     optimizer.zero_grad()
@@ -83,9 +90,28 @@ for epoch in range(epochs):
         val_outputs = model(X_val)
         val_loss = criterion(val_outputs,y_val)
     val_losses.append(val_loss.item())
+    if val_loss.item() < best_Val_loss:
+        best_Val_loss = val_loss.item()
+        best_model_state = copy.deepcopy(model.state_dict())
+        counter= 0 
+    else:
+        counter +=1 
+    if counter >= patience:
+        print(f"Early stopping at epoch {epoch+1}")
+        break
     if(epoch+1)%10 ==0:
         print(f"Epoch{epoch+1}/{epochs}, Loss: {loss.item():.4f}," f"Val Loss = {val_loss.item():.4f}")
 
+model.load_state_dict(best_model_state)
+print(f"Best val loss: {best_Val_loss:.4f}")
+Path("results").mkdir(exist_ok=True)
+
+torch.save(
+    model.state_dict(),
+    "results/best_decoder.pt"
+)
+
+print("Best model saved!")
 model.eval()
 with torch.no_grad():
     train_outputs = model(X_train)

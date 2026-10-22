@@ -178,3 +178,41 @@ I also added a random seed to make the experiments more reproducible and saved t
 **What I learned:** A lower training loss doesn't always mean a model will perform better on new data. Using validation data helps compare models without relying on test performance.
 
 **Next:** Test the model with different random seeds, save the normalization parameters, and create a function that takes neural activity and predicts the stimulus direction.
+
+## Experiment 7 — Dropout and Early Stopping
+
+Today I continued improving the neural network by experimenting with dropout, longer training, and early stopping.
+
+I used the same 382 training samples, 96 validation samples, and 120 testing samples. I also kept the learning rate at 0.001 and weight decay at 0.001.
+
+First, I compared the model with and without 30% dropout over 100 epochs.
+
+**Results:**
+
+| Model                    | Training accuracy | Validation accuracy | Test accuracy |
+| ------------------------ | ----------------: | ------------------: | ------------: |
+| No dropout (100 epochs)  |            90.31% |              65.62% |        58.33% |
+| Dropout 30% (100 epochs) |            88.74% |              63.54% |        57.50% |
+| Dropout 30% (300 epochs) |            99.74% |              75.00% |        66.67% |
+
+Adding dropout initially made accuracy slightly worse. However, increasing training to 300 epochs improved the model's performance significantly.
+
+I also implemented early stopping, which saves the model weights with the lowest validation loss and stops training if validation loss doesn't improve for 30 epochs.
+
+**Final results:**
+
+- Best validation loss: 0.8078
+- Training accuracy: 99.74%
+- Validation accuracy: 75.00%
+- Test accuracy: 66.67%
+- Training completed all 300 epochs.
+
+The loss graph showed that training loss continued decreasing while validation loss started flattening around epoch 250. This suggests the model is beginning to overfit, even with dropout and weight decay.
+
+My best test accuracy so far is **66.67%**, compared to 60.00% from my original neural network.
+
+I also saved the best model weights in `results/best_decoder.pt`.
+
+**What I learned:** Training for more epochs can improve performance, but eventually the model starts fitting the training data much better than the validation data. Early stopping helps preserve the best model instead of automatically using the weights from the final epoch.
+
+**Next:** Compare different model settings using validation results, test with multiple random seeds, and save the normalization parameters so the model can make predictions on new neural activity.
