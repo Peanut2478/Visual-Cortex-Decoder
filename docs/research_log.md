@@ -216,3 +216,44 @@ I also saved the best model weights in `results/best_decoder.pt`.
 **What I learned:** Training for more epochs can improve performance, but eventually the model starts fitting the training data much better than the validation data. Early stopping helps preserve the best model instead of automatically using the weights from the final epoch.
 
 **Next:** Compare different model settings using validation results, test with multiple random seeds, and save the normalization parameters so the model can make predictions on new neural activity.
+
+### Experiment 8 — Regularization and Model Comparison
+
+Today I trained a logistic regression model to compare against my PyTorch MLP. Logistic regression achieved 62.5% test accuracy, slightly higher than the original MLP's 60%.
+
+I also updated the MLP with dropout (0.3), weight decay (0.001), and early stopping. The updated model stopped at epoch 144 and achieved 98.69% training accuracy, 70.83% validation accuracy, and 61.67% test accuracy.
+
+The model still seems to overfit because training accuracy is much higher than test accuracy. Logistic regression performed slightly better on this test set, suggesting that a simpler model can already extract useful information from the neural activity.
+
+Next, I want to investigate which neurons contribute most to decoding accuracy and whether reducing the number of input features improves generalization.
+
+### Experiment 9 — Neuron Importance Analysis
+
+Investigated which neurons contribute most to decoding visual stimulus direction using permutation importance.
+
+I shuffled each neuron's activity and measured how much the MLP's validation accuracy decreased. Neurons 84, 80, and 67 had the highest importance scores.
+
+I then trained logistic regression models using different numbers of neurons.
+
+| Neurons | Training Accuracy | Validation Accuracy |
+| ------- | ----------------- | ------------------- |
+| 10      | 34.29%            | 35.42%              |
+| 25      | 53.93%            | 45.83%              |
+| 50      | 70.42%            | 55.21%              |
+| 100     | 88.74%            | 67.71%              |
+| 207     | 97.91%            | 72.92%              |
+
+**Observations:**
+
+Validation accuracy increased as more neurons were included, suggesting that visual stimulus information is distributed across the population rather than concentrated in a few individual neurons.
+
+The gap between training and validation accuracy also increased with more neurons, suggesting overfitting.
+
+Because neuron importance was calculated using validation data, these results are exploratory and need further evaluation using training-only feature selection.
+
+**Figures saved:**
+
+- `results/figures/neuron_importance.png`
+- `results/figures/neuron_count_accuracy.png`
+
+**Next steps:** Investigate whether PCA can reduce the number of neural features while preserving decoding accuracy. Compare PCA with Oja's learning rule to explore biologically inspired dimensionality reduction.

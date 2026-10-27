@@ -7,7 +7,8 @@ import random
 import copy 
 import matplotlib.pyplot as plt
 from pathlib import Path
-from sklearn.metrics import confusion_matrix
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix,accuracy_score
 from sklearn.model_selection import train_test_split
 
 random.seed(42)
@@ -15,10 +16,18 @@ np.random.seed(42)
 torch.manual_seed(42)
 
 class NeuralDecoder(nn.Module):
-    def __init__(self):
+    def __init__(self,input_size=207):
         super().__init__()
 
-        self.network = nn.Sequential(nn.Linear(207,64),nn.ReLU(),nn.Dropout(p=0.3),nn.Linear(64,8))
+        self.network = nn.Sequential( nn.Linear(input_size, 128),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+
+            nn.Linear(64, 8))
 
     def forward(self,x):
         return self.network(x)
@@ -36,6 +45,21 @@ X_train, X_val, y_train, y_val = train_test_split(
 )
 #normalie 
 X_train, X_val, X_test = normalize_data(X_train,X_val,X_test)
+
+# linear testing 
+linear_model = LogisticRegression(max_iter=2000)
+linear_model.fit(X_train, y_train)
+train_preds = linear_model.predict(X_train)
+test_preds = linear_model.predict(X_test)
+print("Training accuracy:",
+      accuracy_score(y_train, train_preds))
+
+print("Test accuracy:",
+      accuracy_score(y_test, test_preds))
+
+print("Confusion matrix:")
+print(confusion_matrix(y_test, test_preds))
+
  #convert to tensor 
 X_train = torch.tensor(X_train, dtype=torch.float32)
 X_val = torch.tensor(X_val, dtype=torch.float32)
@@ -61,8 +85,11 @@ print("Testing labels:", y_test.shape)
 print("Training finite:", np.isfinite(X_train).all())
 print("Testing finite:", np.isfinite(X_test).all())
 
+
+
+
 torch.manual_seed(42)
-model = NeuralDecoder()
+model = NeuralDecoder(input_size=X_train.shape[1])
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(),lr=0.001,weight_decay=0.001)
 outputs = model(X_train)
@@ -113,6 +140,8 @@ torch.save(
 
 print("Best model saved!")
 model.eval()
+
+
 with torch.no_grad():
     train_outputs = model(X_train)
     val_outputs = model(X_val)
@@ -152,3 +181,85 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+with torch.no_grad():
+    og_preds = model(X_val).argmax(dim=1)
+    base_acc = (og_preds ==y_val).float().mean().item()
+print(f"Baseline val accurancy: {base_acc:.4f}")
+importance_scores = []
+for neuron_idx in range(X_val.shape[1]):
+    drops = []
+    for repeat in range(5):
+        X_shuffled = X_val.clone()
+        permutation = torch.randperm(X_val.shape[0])
+        X_shuffled[:,neuron_idx] = (X_shuffled[permutation,neuron_idx])
+
+        with torch.no_grad():
+            preds = model(X_shuffled).argmax(dim=1)
+            shuffled_acc = (preds ==y_val).float().mean().item()
+        drops.append(base_acc - shuffled_acc)
+    importance_scores.append(np.mean(drops))
+importance_scores = np.array(importance_scores)
+top_neurons = np.argsort(importance_scores)[::-1]
+print("\nTop 10 most importnat neurons:")
+for rank, neuron_idx in enumerate(top_neurons[:10],start=1):
+    print(f"{rank}. Neuron {neuron_idx}: "
+    f"Importance = {importance_scores[neuron_idx]:.4f}")
+
+X_train_np = X_train.detach().cpu().numpy()
+X_val_np = X_val.detach().cpu().numpy()
+y_train_np = y_train.detach().cpu().numpy()
+y_val_np = y_val.detach().cpu().numpy()
+
+neuron_counts = [10,25,50,100,207]
+results = []
+for n in neuron_counts:
+    # top neuron 
+    selected = top_neurons[:n]
+    X_train_subset = X_train_np[:,selected]
+    X_val_subset = X_val_np[:,selected]
+
+    #train a new classifier 
+    clf = LogisticRegression(max_iter=2000)
+    clf.fit(X_train_subset,y_train_np)
+
+    #eval 
+    train_acc = accuracy_score(y_train_np, clf.predict(X_train_subset))
+    val_acc = accuracy_score(y_val_np,clf.predict(X_val_subset))
+
+    results.append((n,train_acc,val_acc))
+    print(
+        f"{n} neurons |"
+        f"Train: {train_acc:.2%}|"
+        f"Val: {val_acc:.2%}"
+    )
+
+sorted_importance = importance_scores[top_neurons]
+plt.figure(figsize=(10, 5))
+plt.plot(
+    range(1, len(sorted_importance) + 1),
+    sorted_importance
+)
+plt.axhline(0, color="gray", linestyle="--")
+plt.xlabel("Neuron rank")
+plt.ylabel("Permutation importance")
+plt.title("Neuron Importance Ranking")
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.savefig("results/figures/neuron_importance.png", dpi=300)
+plt.show()
+
+counts = [r[0] for r in results]
+train_accs = [r[1] for r in results]
+val_accs = [r[2] for r in results]
+
+plt.figure(figsize=(8, 5))
+plt.plot(counts, train_accs, "o-", label="Training")
+plt.plot(counts, val_accs, "o-", label="Validation")
+plt.xlabel("Number of neurons")
+plt.ylabel("Accuracy")
+plt.title("Decoding Accuracy vs Number of Neurons")
+plt.legend()
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.savefig("results/figures/neuron_count_accuracy.png", dpi=300)
+plt.show()
