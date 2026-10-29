@@ -257,3 +257,87 @@ Because neuron importance was calculated using validation data, these results ar
 - `results/figures/neuron_count_accuracy.png`
 
 **Next steps:** Investigate whether PCA can reduce the number of neural features while preserving decoding accuracy. Compare PCA with Oja's learning rule to explore biologically inspired dimensionality reduction.
+
+## Experiment 10 — Hyperparameter Tuning and Final Model Evaluation
+
+### Objective
+
+Improve the generalization performance of the neural network decoder by tuning dropout, learning rate, and weight decay.
+
+### Method
+
+Used the Allen Brain Observatory dataset containing 207 recorded neurons and eight drifting-grating stimulus directions.
+
+The neural network architecture consisted of two hidden layers (128 and 64 neurons) with ReLU activations and dropout. Models were trained using Adam optimization and cross-entropy loss, with a maximum of 300 epochs and early stopping based on validation loss.
+
+Hyperparameters were tuned sequentially using the validation set.
+
+### Hyperparameter Experiments
+
+**Dropout tuning**
+
+| Dropout | Validation accuracy |
+| ------- | ------------------: |
+| 0.2     |              70.83% |
+| 0.3     |              70.83% |
+| 0.4     |              72.92% |
+| 0.5     |              75.00% |
+
+**Learning rate tuning**
+
+| Learning rate | Validation accuracy |
+| ------------- | ------------------: |
+| 0.0001        |              40.62% |
+| 0.0005        |              75.00% |
+| 0.001         |              75.00% |
+
+**Weight decay tuning**
+
+| Weight decay | Validation accuracy |
+| ------------ | ------------------: |
+| 0.0001       |              76.04% |
+| 0.001        |              75.00% |
+| 0.01         |              66.67% |
+
+### Final Model
+
+Selected hyperparameters:
+
+- Architecture: 207 → 128 → 64 → 8
+- Dropout: 0.5
+- Learning rate: 0.001
+- Weight decay: 0.0001
+- Optimizer: Adam
+- Loss function: Cross-entropy
+
+### Results
+
+| Metric              |  Day 8 | Day 10 |
+| ------------------- | -----: | -----: |
+| Training accuracy   | 97.91% | 98.69% |
+| Validation accuracy | 72.92% | 76.04% |
+| Test accuracy       | 62.50% | 63.33% |
+
+The tuned model correctly classified 76 of 120 held-out test samples.
+
+### Observations
+
+Increasing dropout improved validation performance. Reducing weight decay from 0.001 to 0.0001 produced an additional improvement.
+
+The confusion matrix showed that certain directions were more difficult to distinguish, particularly 90° and 270°. This may indicate orientation-related ambiguity in the neural population responses.
+
+Despite improved validation performance, test accuracy increased by only 0.83 percentage points, equivalent to one additional correct prediction.
+
+### Conclusion
+
+Hyperparameter tuning improved validation accuracy from 72.92% to 76.04% and test accuracy from 62.50% to 63.33%.
+
+The model still exhibits a substantial training-validation gap, indicating that generalization remains a challenge.
+
+Future work will investigate direction-specific errors and compare nonlinear neural network decoding against simpler linear approaches.
+
+### Saved Outputs
+
+- `results/best_decoder.pt`
+- `results/figures/hyperparameter_tuning.png`
+- `results/figures/tuned_confusion_matrix.png`

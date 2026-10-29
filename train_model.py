@@ -16,16 +16,16 @@ np.random.seed(42)
 torch.manual_seed(42)
 
 class NeuralDecoder(nn.Module):
-    def __init__(self,input_size=207):
+    def __init__(self,input_size=207,dropout=0.3):
         super().__init__()
 
         self.network = nn.Sequential( nn.Linear(input_size, 128),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(dropout),
 
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(dropout),
 
             nn.Linear(64, 8))
 
@@ -85,9 +85,131 @@ print("Testing labels:", y_test.shape)
 print("Training finite:", np.isfinite(X_train).all())
 print("Testing finite:", np.isfinite(X_test).all())
 
+print("Unique training labels:", torch.unique(y_train))
+print("Unique validation labels:", torch.unique(y_val))
+print("Unique testing labels:", torch.unique(y_test))
+print("Training label counts:", torch.bincount(y_train))
+print("Validation label counts:", torch.bincount(y_val))
 
+# param experiment 
+weight_decays = [0.0001, 0.001, 0.01]
+wd_results = []
+for wd in weight_decays:
+    print(f"\nTesting Weight Decay = {wd}")
+    torch.manual_seed(42)
+    test_model = NeuralDecoder(input_size=X_train.shape[1],dropout=0.5)
+    criterion = nn.CrossEntropyLoss()
 
+    optimizer = torch.optim.Adam(test_model.parameters(), lr=0.001, weight_decay=wd)
+    best_val_loss = float("inf")
+    best_state = None
+    patience = 30 
+    counter = 0 
 
+    for epoch in range (300):
+        test_model.train()
+        optimizer.zero_grad()
+
+        outputs = test_model(X_train)
+        loss =criterion(outputs,y_train)
+
+        loss.backward()
+        optimizer.step()
+        test_model.eval()
+
+        with torch.no_grad():
+            val_outputs = test_model(X_val)
+            val_loss = criterion(val_outputs,y_val).item()
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            best_state = copy.deepcopy(test_model.state_dict())
+            counter =0
+        else:
+            counter += 1
+        if epoch < 5 or (epoch + 1) % 10 == 0:
+            print(
+                f"Epoch {epoch + 1}: "
+                f"Train Loss = {loss.item():.4f}, "
+                f"Val Loss = {val_loss:.4f}, "
+                f"Patience Counter = {counter}"
+            )    
+        if counter >= patience:
+            print(f"Early stopping at epoch {epoch + 1}")
+            break 
+    #restor ebst odel 
+    test_model.load_state_dict(best_state)
+    print(f"Best validation loss: {best_val_loss:.4f}")
+    print(f"Epochs completed: {epoch + 1}")
+    test_model.eval()
+
+    with torch.no_grad():
+        train_preds = test_model(X_train).argmax(dim=1)
+        val_preds = test_model(X_val).argmax(dim=1)
+
+        train_acc = ((train_preds == y_train).float().mean().item() * 100)
+        val_acc = ((val_preds == y_val).float().mean().item() * 100)
+    wd_results.append((wd, train_acc, val_acc, best_val_loss))
+    print(
+        f"Weight Decay {wd} | "
+        f"Train: {train_acc:.2f}% | "
+        f"Val: {val_acc:.2f}% | "
+        f"Best Val Loss: {best_val_loss:.4f}"
+    )
+print("\n--- Weight Decay Comparison ---")
+for wd, train_acc, val_acc, val_loss in wd_results:
+    print(
+        f"{wd}: Train={train_acc:.2f}%, "
+        f"Val={val_acc:.2f}%, "
+        f"Loss={val_loss:.4f}"
+    )
+
+# Save the best hyperparameter configuration
+best_wd = min(wd_results, key=lambda x: x[3])[0]
+print(f"\nBest weight decay: {best_wd}")
+# Retrain with selected hyperparameters
+torch.manual_seed(42)
+model = NeuralDecoder(
+    input_size=X_train.shape[1],
+    dropout=0.5
+)
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0.001,
+    weight_decay=best_wd
+)
+best_val_loss = float("inf")
+best_state = None
+counter = 0
+for epoch in range(300):
+    model.train()
+    optimizer.zero_grad()
+    outputs = model(X_train)
+    loss = criterion(outputs, y_train)
+    loss.backward()
+    optimizer.step()
+    model.eval()
+    with torch.no_grad():
+        val_loss = criterion(model(X_val), y_val).item()
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        best_state = copy.deepcopy(model.state_dict())
+        counter = 0
+    else:
+        counter += 1
+    if counter >= 30:
+        break
+
+model.load_state_dict(best_state)
+model.eval()
+Path("results").mkdir(exist_ok=True)
+torch.save(
+    model.state_dict(),
+    "results/best_decoder.pt"
+)
+print("Best model saved!")
+print(f"Best validation loss: {best_val_loss:.4f}")
+''' 
 torch.manual_seed(42)
 model = NeuralDecoder(input_size=X_train.shape[1])
 criterion = nn.CrossEntropyLoss()
@@ -234,32 +356,85 @@ for n in neuron_counts:
     )
 
 sorted_importance = importance_scores[top_neurons]
-plt.figure(figsize=(10, 5))
-plt.plot(
-    range(1, len(sorted_importance) + 1),
-    sorted_importance
+
+'''
+model.eval()
+
+with torch.no_grad():
+    test_outputs = model(X_test)
+    test_predictions = torch.argmax(test_outputs, dim=1)
+
+    test_accuracy = (
+        (test_predictions == y_test).float().mean().item()
+    ) * 100
+
+print(f"\nFinal Test Accuracy: {test_accuracy:.2f}%")
+
+cm = confusion_matrix(
+    y_test.numpy(),
+    test_predictions.numpy(),
+    labels=np.arange(8)
 )
-plt.axhline(0, color="gray", linestyle="--")
-plt.xlabel("Neuron rank")
-plt.ylabel("Permutation importance")
-plt.title("Neuron Importance Ranking")
-plt.grid(alpha=0.3)
+
+print("\nFinal Confusion Matrix:")
+print(cm)
+
+Path("results/figures").mkdir(parents=True, exist_ok=True)
+
+plt.figure(figsize=(8, 6))
+plt.imshow(cm, cmap="Blues")
+plt.colorbar(label="Number of predictions")
+
+plt.xticks(range(8), range(0, 360, 45))
+plt.yticks(range(8), range(0, 360, 45))
+
+plt.xlabel("Predicted Direction (degrees)")
+plt.ylabel("Actual Direction (degrees)")
+plt.title("Tuned Neural Decoder — Test Confusion Matrix")
+
 plt.tight_layout()
-plt.savefig("results/figures/neuron_importance.png", dpi=300)
+plt.savefig(
+    "results/figures/tuned_confusion_matrix.png",
+    dpi=300
+)
 plt.show()
 
-counts = [r[0] for r in results]
-train_accs = [r[1] for r in results]
-val_accs = [r[2] for r in results]
+# Day 10: Hyperparameter tuning summary
 
-plt.figure(figsize=(8, 5))
-plt.plot(counts, train_accs, "o-", label="Training")
-plt.plot(counts, val_accs, "o-", label="Validation")
-plt.xlabel("Number of neurons")
-plt.ylabel("Accuracy")
-plt.title("Decoding Accuracy vs Number of Neurons")
-plt.legend()
-plt.grid(alpha=0.3)
+Path("results/figures").mkdir(parents=True, exist_ok=True)
+
+dropout_values = [0.2, 0.3, 0.4, 0.5]
+dropout_acc = [70.83, 70.83, 72.92, 75.00]
+
+learning_rates = [0.0001, 0.0005, 0.001]
+lr_acc = [40.62, 75.00, 75.00]
+
+weight_decays = [0.0001, 0.001, 0.01]
+wd_acc = [76.04, 75.00, 66.67]
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+axes[0].plot(dropout_values, dropout_acc, "o-")
+axes[0].set_title("Dropout Tuning")
+axes[0].set_xlabel("Dropout Rate")
+axes[0].set_ylabel("Validation Accuracy (%)")
+
+axes[1].plot(learning_rates, lr_acc, "o-")
+axes[1].set_title("Learning Rate Tuning")
+axes[1].set_xlabel("Learning Rate")
+axes[1].set_ylabel("Validation Accuracy (%)")
+
+axes[2].plot(weight_decays, wd_acc, "o-")
+axes[2].set_title("Weight Decay Tuning")
+axes[2].set_xlabel("Weight Decay")
+axes[2].set_ylabel("Validation Accuracy (%)")
+
+for ax in axes:
+    ax.grid(alpha=0.3)
+
 plt.tight_layout()
-plt.savefig("results/figures/neuron_count_accuracy.png", dpi=300)
+plt.savefig(
+    "results/figures/hyperparameter_tuning.png",
+    dpi=300
+)
 plt.show()
