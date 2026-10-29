@@ -341,3 +341,68 @@ Future work will investigate direction-specific errors and compare nonlinear neu
 - `results/best_decoder.pt`
 - `results/figures/hyperparameter_tuning.png`
 - `results/figures/tuned_confusion_matrix.png`
+
+## Experiment 11 — Direction-Specific Error Analysis and Linear Decoder Comparison
+
+**Date:** October 29, 2026
+
+### Objective
+
+Analyze stimulus-direction-specific decoding errors and determine whether a nonlinear neural network provides an advantage over a linear classifier.
+
+### Experiment 11.1 — Direction-Specific Accuracy
+
+Evaluated the tuned neural network's test confusion matrix to calculate classification accuracy for each stimulus direction.
+
+| Direction | Accuracy |
+| --------- | -------: |
+| 0°        |   64.71% |
+| 45°       |   85.71% |
+| 90°       |   47.06% |
+| 135°      |   76.92% |
+| 180°      |   64.29% |
+| 225°      |   64.71% |
+| 270°      |   30.77% |
+| 315°      |   73.33% |
+
+**Findings:**
+
+- Highest accuracy occurred at 45° (85.71%).
+- Lowest accuracy occurred at 270° (30.77%).
+- Frequent confusion between 90° and 270° suggests difficulty distinguishing certain opposite motion directions.
+- Direction-specific differences may reflect variation in neural population representations, although further analysis is needed.
+
+### Experiment 11.2 — Linear Decoder
+
+Trained a multinomial logistic regression classifier using normalized calcium fluorescence responses from 207 neurons.
+
+Used the same training, validation, and test partitions as the neural network.
+
+**Results:**
+
+| Metric              | Neural Network | Logistic Regression |
+| ------------------- | -------------: | ------------------: |
+| Training accuracy   |         98.69% |              97.91% |
+| Validation accuracy |         76.04% |              72.92% |
+| Test accuracy       |         63.33% |              62.50% |
+
+### Interpretation
+
+The nonlinear neural network achieved a marginal improvement of 0.83 percentage points in test accuracy over logistic regression.
+
+Both models substantially exceeded the eight-class chance accuracy of 12.5%, demonstrating that neural population activity contains decodable information about visual stimulus direction.
+
+The small performance difference suggests that a linear classifier captures much of the information accessible to the neural network under the current experimental conditions.
+
+Both models exhibited substantial training-to-test accuracy gaps, indicating limited generalization.
+
+### Figures Generated
+
+- `results/figures/day11_direction_accuracy.png`
+- `results/figures/day11_model_comparison.png`
+
+### Conclusion
+
+Linear and nonlinear models achieved similar stimulus-direction decoding performance. More complex neural network architectures did not provide a substantial test accuracy advantage in this experiment.
+
+Future experiments should investigate dimensionality reduction, regularization, and generalization across different neural recordings.
