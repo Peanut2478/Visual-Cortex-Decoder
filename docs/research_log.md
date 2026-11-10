@@ -406,3 +406,59 @@ Both models exhibited substantial training-to-test accuracy gaps, indicating lim
 Linear and nonlinear models achieved similar stimulus-direction decoding performance. More complex neural network architectures did not provide a substantial test accuracy advantage in this experiment.
 
 Future experiments should investigate dimensionality reduction, regularization, and generalization across different neural recordings.
+
+## Experiment 11 — Circular Angular Error Analysis
+
+**Objective:** Evaluate whether the neural network produces more accurate directional predictions than logistic regression beyond standard classification accuracy.
+
+### Methodology
+
+Calculated circular angular error from the confusion matrices of both models, accounting for the periodic nature of angles. Evaluated all 120 held-out test samples across eight stimulus directions.
+
+### Results
+
+| Metric                           | Neural Network | Logistic Regression |
+| -------------------------------- | -------------: | ------------------: |
+| Test Accuracy                    |         63.33% |              62.50% |
+| Mean Angular Error               |         48.00° |              51.75° |
+| Opposite-Direction Errors (180°) |             21 |                  23 |
+
+### Observations
+
+1. The neural network achieved a 3.75° reduction in mean angular error relative to logistic regression.
+2. Approximately 47.7% of the neural network's incorrect predictions were opposite-direction errors.
+3. The prevalence of 180° errors may reflect orientation-related neural responses, although additional analysis is required to test this hypothesis.
+4. The neural network's advantage is relatively small, suggesting that more complex nonlinear models may provide limited benefits for this dataset.
+
+### Conclusion
+
+The neural network performs slightly better than logistic regression in both classification accuracy and mean angular error. However, both models exhibit substantial opposite-direction confusion. Future experiments should investigate orientation versus direction selectivity and assess whether differences between models are statistically reliable.
+
+**Figure:** `results/figures/day12_angular_error_distribution.png`
+
+## Experiment 12 — Opposite-Direction Error Analysis
+
+**Objective:** Investigate why the neural network frequently confuses stimuli moving in opposite directions.
+
+**Methods:**
+
+- Analyzed the final neural network confusion matrix to identify 180° prediction errors.
+- Calculated opposite-direction error rates for all eight stimulus directions.
+- Computed cosine similarity between average normalized neural population responses using training data.
+- Generated visualizations of opposite-direction errors and neural response similarity.
+
+**Results:**
+
+- Total opposite-direction errors: 21 out of 120 test predictions (17.50%).
+- The 90°/270° pair accounted for 10 of these errors (47.62%).
+- The 270° stimulus had the highest opposite-direction error rate (46.15%).
+- The 90°/270° pair had the highest opposite-direction cosine similarity (0.4434), compared with approximately 0.21–0.22 for the other opposite-direction pairs.
+
+**Conclusion:**
+
+The neural network had the greatest difficulty distinguishing 90° and 270° stimuli. These directions also produced the most similar average neural population responses among opposite-direction pairs. This suggests that overlapping neural representations may contribute to the decoder's errors, although further analysis is needed to establish a causal relationship.
+
+**Figures:**
+
+- `results/figures/opposite_direction_errors.png`
+- `results/figures/neural_similarity.png`
