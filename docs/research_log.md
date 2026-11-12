@@ -462,3 +462,29 @@ The neural network had the greatest difficulty distinguishing 90° and 270° sti
 
 - `results/figures/opposite_direction_errors.png`
 - `results/figures/neural_similarity.png`
+
+## Experiment 13 — Neural Direction Selectivity Analysis
+
+**Objective:** Investigate whether individual neurons distinguish opposite motion directions and explore how this could contribute to decoding errors.
+
+**Methods:**
+
+- Calculated Direction Selectivity Index (DSI) for 207 neurons.
+- Visualized direction tuning curves for neurons with high and low DSI.
+- Recalculated DSI using baseline-shifted neural responses to reduce artifacts caused by clipping negative values.
+
+**Results:**
+
+- Original mean DSI: 0.7032
+- Refined mean DSI: 0.4098
+- Refined median DSI: 0.3595
+- High DSI (> 0.5): 69 neurons (33.3%)
+- Low DSI (< 0.2): 52 neurons (25.1%)
+
+**Observations:**
+
+The original calculation overestimated direction selectivity because negative responses were clipped to zero. The refined analysis revealed substantial variability in how strongly neurons distinguish opposite stimulus directions.
+
+**Conclusion:**
+
+The results suggest that limited direction selectivity among some neurons may contribute to opposite-direction decoding errors. Further analysis is necessary to determine whether neurons with stronger direction selectivity improve decoding performance.
