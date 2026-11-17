@@ -58,20 +58,4 @@ if len(valid_dsi) > 0:
           f"{np.sum(valid_dsi > 0.5)}")
     print(f"Low selectivity (DSI < 0.2): "
           f"{np.sum(valid_dsi < 0.2)}")
-# Plot DSI distribution
-Path("results/figures").mkdir(
-    parents=True, exist_ok=True
-)
-plt.figure(figsize=(8, 5))
-plt.hist(valid_dsi, bins=20, edgecolor="black")
-plt.xlabel("Direction Selectivity Index (DSI)")
-plt.ylabel("Number of Neurons")
-plt.title("Distribution of Direction Selectivity")
-plt.xlim(0, 1)
-plt.tight_layout()
-plt.savefig(
-    "results/figures/dsi_distribution.png",
-    dpi=300
-)
-plt.show()
-print("\nDSI distribution saved!")
+

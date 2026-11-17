@@ -488,3 +488,27 @@ The original calculation overestimated direction selectivity because negative re
 **Conclusion:**
 
 The results suggest that limited direction selectivity among some neurons may contribute to opposite-direction decoding errors. Further analysis is necessary to determine whether neurons with stronger direction selectivity improve decoding performance.
+
+### Experiment 14 — Direction Selectivity and Decoding Performance
+
+**Objective:** Investigate whether neurons with higher direction selectivity contribute more useful information to visual stimulus decoding.
+
+**Method:** Neurons were grouped by direction selectivity index (DSI). Logistic regression models were trained using high-DSI, low-DSI, and complete neural populations. An additional experiment compared equal-sized groups of 29 neurons using 100 random high-DSI subsets.
+
+**Results:**
+
+- All 207 neurons: 62.50% test accuracy
+- High-DSI population (149 neurons): 56.67% test accuracy
+- Low-DSI population (29 neurons): 32.50% test accuracy
+- Equal-size high-DSI comparison: 37.32% mean validation accuracy
+- Equal-size low-DSI comparison: 40.62% mean validation accuracy
+- Difference: −3.30 percentage points
+
+**Conclusion:** Although the full high-DSI population outperformed the low-DSI population, this advantage did not persist when neuron count was controlled. These findings suggest that individual direction selectivity alone does not determine population-level decoding performance.
+
+**Limitations:** DSI was calculated from clipped, mean-centered neural responses. Additionally, the repeated high-DSI subsets were not independent experimental samples.
+
+**Figures:**
+
+- `results/figures/dsi_decoder_comparison.png`
+- `results/figures/dsi_equal_size_comparison.png`
