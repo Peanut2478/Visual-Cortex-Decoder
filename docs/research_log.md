@@ -512,3 +512,28 @@ The results suggest that limited direction selectivity among some neurons may co
 
 - `results/figures/dsi_decoder_comparison.png`
 - `results/figures/dsi_equal_size_comparison.png`
+
+### Experiment 15 – Vector-Based Direction Selectivity Analysis
+
+**Date:** November 20, 2026
+
+**Objective:** Investigate whether neurons with higher direction selectivity contribute more to stimulus direction decoding.
+
+**Work Completed:**
+
+- Verified the original DSI calculation across 207 neurons.
+- Implemented vector-based DSI to account for responses across all eight stimulus directions.
+- Compared decoding accuracy using high-DSI, low-DSI, and all-neuron groups.
+- Performed 100 random selections of 24 high-DSI neurons to compare against the 24 low-DSI neurons.
+- Generated figures showing decoding accuracy and equal-size neuron comparisons.
+
+**Results:**
+
+- High DSI (125 neurons): 65.62% validation accuracy.
+- Low DSI (24 neurons): 43.75% validation accuracy.
+- All neurons (207): 72.92% validation accuracy.
+- Equal-size comparison: High DSI averaged 35.98%, while low DSI achieved 43.75%.
+
+**Key Finding:** Low-DSI neurons outperformed randomly selected high-DSI neuron groups of equal size by 7.77 percentage points. This suggests that individual direction selectivity does not necessarily determine a neuron's usefulness for population-level decoding.
+
+**Next Steps:** Consolidate model results, create final comparison figures, and begin writing project conclusions and documentation.

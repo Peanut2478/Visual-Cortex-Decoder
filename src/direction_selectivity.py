@@ -46,6 +46,30 @@ dsi = np.divide(
 )
 valid_dsi  = dsi[np.isfinite(dsi)]
 
+#vecotr based DSI 
+angles = np.deg2rad(directions)
+vector_x = np.sum(responses * np.cos(angles)[:,None],
+axis=0)
+vector_y = np.sum(responses * np.sin(angles)[:,None], axis=0)
+vector_magnitude = np.sqrt(vector_x **2 + vector_y**2)
+tot_resp = np.sum(responses, axis=0)
+vector_dsi = np.divide(
+    vector_magnitude,
+    tot_resp,
+    out=np.full_like(tot_resp,np.nan),
+    where=tot_resp > 1e-8
+)
+valid_vector_dsi = vector_dsi[np.isfinite(vector_dsi)]
+
+print("\nVector-Based DSI Analysis")
+print("-" * 40)
+print(f"Valid neurons: {len(valid_vector_dsi)}")
+print(f"Mean DSI: {np.mean(valid_vector_dsi):.4f}")
+print(f"Median DSI: {np.median(valid_vector_dsi):.4f}")
+print(f"High DSI (>0.5): {np.sum(valid_vector_dsi > 0.5)}")
+print(f"Low DSI (<0.2): {np.sum(valid_vector_dsi < 0.2)}")
+
+
 print("\nDirection Selectivity Analysis")
 print("-" * 40)
 print(f"Total neurons: {len(dsi)}")

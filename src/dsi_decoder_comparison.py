@@ -58,6 +58,18 @@ print(f"Min DSI: {np.nanmin(dsi):.4f}")
 print(f"Max DSI: {np.nanmax(dsi):.4f}")
 print(f"Valid neurons: {np.sum(np.isfinite(dsi))}")
 
+#cal vector_dsi
+angles = np.deg2rad(directions)
+vector_x = np.sum(responses * np.cos(angles)[:,None], axis=0)
+vector_y = np.sum(responses * np.sin(angles)[:,None], axis=0)
+tot_resp = np.sum(responses,axis=0)
+vector_dsi = np.divide(
+    np.sqrt(vector_x**2 + vector_y**2),
+    tot_resp,
+    out=np.full_like(tot_resp,np.nan),
+    where=tot_resp >1e-8
+)
+dsi = vector_dsi
 # Define neuron groups
 high_dsi = np.where(np.isfinite(dsi) & (dsi > 0.5))[0]
 low_dsi = np.where(np.isfinite(dsi) & (dsi < 0.2))[0]
@@ -84,17 +96,17 @@ for name, indices in groups.items():
     model.fit(X_train[:, indices], y_train)
 
     val_pred = model.predict(X_val[:, indices])
-    test_pred = model.predict(X_test[:, indices])
+    #test_pred = model.predict(X_test[:, indices])
 
     val_acc = accuracy_score(y_val, val_pred)
-    test_acc = accuracy_score(y_test, test_pred)
+    #test_acc = accuracy_score(y_test, test_pred)
 
-    results[name] = (val_acc, test_acc)
+    results[name] = (val_acc)
 
     print(f"\n{name}")
     print(f"Neurons: {len(indices)}")
     print(f"Validation Accuracy: {val_acc * 100:.2f}%")
-    print(f"Test Accuracy: {test_acc * 100:.2f}%")
+
 
 # Plot comparison
 Path("results/figures").mkdir(
@@ -102,27 +114,17 @@ Path("results/figures").mkdir(
 )
 
 names = list(results.keys())
-val_accuracies = [results[n][0] * 100 for n in names]
-test_accuracies = [results[n][1] * 100 for n in names]
-
-x = np.arange(len(names))
-width = 0.35
+val_accuracies = [results[n] * 100 for n in names]
 
 plt.figure(figsize=(9, 5))
-plt.bar(x - width / 2, val_accuracies, width,
-        label="Validation")
-plt.bar(x + width / 2, test_accuracies, width,
-        label="Test")
-
-plt.xticks(x, names)
-plt.ylabel("Accuracy (%)")
-plt.title("Decoding Accuracy by Direction Selectivity")
+plt.bar(names, val_accuracies)
+plt.ylabel("Validation Accuracy (%)")
+plt.title("Vector-Based DSI Decoder Comparison")
 plt.ylim(0, 100)
-plt.legend()
 plt.tight_layout()
 
 plt.savefig(
-    "results/figures/dsi_decoder_comparison.png",
+    "results/figures/vector_dsi_decoder_comparison.png",
     dpi=300
 )
 
@@ -175,7 +177,7 @@ plt.ylabel("Validation Accuracy")
 plt.title(f"Equal-Size DSI Comparison ({n_neurons} Neurons)")
 plt.tight_layout()
 plt.savefig(
-    "results/figures/dsi_equal_size_comparison.png",
+    "results/figures/vector_dsi_equal_size_comparison.png",
     dpi=300
 )
 plt.show()
